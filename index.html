@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>sniplink — Link Management Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+
+<div class="noise"></div>
+<div class="grid-bg"></div>
+<div id="toast"></div>
+
+<!-- ══════════════════════════════════════
+     AUTH SCREEN
+══════════════════════════════════════ -->
+<div id="auth-screen" class="screen active">
+  <div class="auth-wrap">
+
+    <div class="auth-card">
+      <div class="auth-brand">
+        <span class="bolt">⚡</span>
+        <span class="brand-name">sniplink</span>
+      </div>
+      <p class="auth-sub">Link Management Platform</p>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-login"    onclick="switchAuthTab('login')">Sign In</button>
+        <button class="auth-tab"        id="tab-register" onclick="switchAuthTab('register')">Register</button>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <div id="form-login" class="auth-form active">
+        <div class="fg">
+          <label class="fl">Email</label>
+          <div class="fw">
+            <span class="fi">✉</span>
+            <input id="login-email" type="email" placeholder="you@example.com" class="fi-input"
+              onkeydown="if(event.key==='Enter')doLogin()"/>
+          </div>
+        </div>
+        <div class="fg">
+          <label class="fl">Password</label>
+          <div class="fw">
+            <span class="fi">🔒</span>
+            <input id="login-pass" type="password" placeholder="••••••••" class="fi-input"
+              onkeydown="if(event.key==='Enter')doLogin()"/>
+          </div>
+        </div>
+        <div id="login-err" class="form-err"></div>
+        <button class="btn-primary full" onclick="doLogin()">Sign In →</button>
+        <button class="btn-guest full" onclick="continueAsGuest()">Continue as Guest →</button>
+        <p class="auth-switch">No account? <a onclick="switchAuthTab('register')">Register free</a></p>
+      </div>
+
+      <!-- REGISTER FORM -->
+      <div id="form-register" class="auth-form">
+        <div class="fg">
+          <label class="fl">Full Name</label>
+          <div class="fw">
+            <span class="fi">👤</span>
+            <input id="reg-name" type="text" placeholder="Your Name" class="fi-input"
+              onkeydown="if(event.key==='Enter')doRegister()"/>
+          </div>
+        </div>
+        <div class="fg">
+          <label class="fl">Email</label>
+          <div class="fw">
+            <span class="fi">✉</span>
+            <input id="reg-email" type="email" placeholder="you@example.com" class="fi-input"
+              onkeydown="if(event.key==='Enter')doRegister()"/>
+          </div>
+        </div>
+        <div class="fg">
+          <label class="fl">Password <span class="opt">(min 6 chars)</span></label>
+          <div class="fw">
+            <span class="fi">🔒</span>
+            <input id="reg-pass" type="password" placeholder="••••••••" class="fi-input"
+              onkeydown="if(event.key==='Enter')doRegister()"/>
+          </div>
+        </div>
+        <div id="reg-err" class="form-err"></div>
+        <button class="btn-primary full" onclick="doRegister()">Create Account →</button>
+        <p class="auth-switch">Have an account? <a onclick="switchAuthTab('login')">Sign in</a></p>
+      </div>
+    </div>
+
+    <div class="auth-promo">
+      <h2 class="promo-title">Everything you need to manage links.</h2>
+      <div class="promo-list">
+        <div class="pf"><span class="pf-icon">✂</span><span>Instant URL shortening</span></div>
+        <div class="pf"><span class="pf-icon">🎯</span><span>Click limit controls</span></div>
+        <div class="pf"><span class="pf-icon">⏸</span><span>Enable / Disable links</span></div>
+        <div class="pf"><span class="pf-icon">✏️</span><span>Edit destination URLs</span></div>
+        <div class="pf"><span class="pf-icon">📊</span><span>Real-time analytics dashboard</span></div>
+        <div class="pf"><span class="pf-icon">💾</span><span>Persistent storage across sessions</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     BLOCKED / EXPIRED SCREEN
+══════════════════════════════════════ -->
+<div id="redirect-screen" class="screen">
+  <div class="redirect-box">
+    <div id="rd-icon" class="rd-icon">🚫</div>
+    <h2 id="rd-title" class="rd-title">Link Unavailable</h2>
+    <p  id="rd-msg"   class="rd-msg">This link is no longer active.</p>
+    <button class="btn-primary" onclick="showScreen('app-screen')">← Back to Dashboard</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     MAIN APP SCREEN
+══════════════════════════════════════ -->
+<div id="app-screen" class="screen">
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="hd-brand">
+      <span class="bolt">⚡</span>
+      <span class="brand-name">sniplink</span>
+    </div>
+    <nav class="hd-nav">
+      <button class="nav-tab" id="nav-dashboard" onclick="switchAppTab('dashboard')">Dashboard</button>
+      <button class="nav-tab" id="nav-create"    onclick="switchAppTab('create')">+ New Link</button>
+    </nav>
+    <div class="hd-right">
+      <div class="user-chip">
+        <span class="user-av" id="user-av">A</span>
+        <span class="user-nm" id="user-nm">User</span>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">Logout</button>
+    </div>
+  </header>
+
+  <!-- ── CREATE PANEL ── -->
+  <div class="panel" id="panel-create">
+    <div class="panel-inner">
+
+      <div class="panel-hero">
+        <h1 class="panel-title">Create New Link</h1>
+        <p  class="panel-sub">Shorten, control, and track your links with precision.</p>
+      </div>
+
+      <div class="create-card">
+        <div class="fg">
+          <label class="fl">Destination URL <span class="req">*</span></label>
+          <div class="fw">
+            <span class="fi">🔗</span>
+            <input id="c-url" type="text" placeholder="https://your-long-url.com" class="fi-input"
+              onkeydown="if(event.key==='Enter')createLink()"/>
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="fg">
+            <label class="fl">Custom Slug <span class="opt">(optional)</span></label>
+            <div class="fw">
+              <span class="fi mono-fi">snip/</span>
+              <input id="c-slug" type="text" placeholder="my-link" class="fi-input mono-in"/>
+            </div>
+          </div>
+          <div class="fg">
+            <label class="fl">Click Limit <span class="opt">(optional)</span></label>
+            <div class="fw">
+              <span class="fi">🎯</span>
+              <input id="c-limit" type="number" min="1" placeholder="e.g. 100" class="fi-input"/>
+            </div>
+          </div>
+        </div>
+        <div id="create-err" class="form-err"></div>
+        <button class="btn-primary" onclick="createLink()">Generate Short Link →</button>
+      </div>
+
+      <!-- Result after creating -->
+      <div id="create-result" class="result-card" style="display:none;">
+        <div class="result-badge">✓ Link Created!</div>
+        <div class="result-url-row">
+          <span id="res-url" class="res-url"></span>
+          <div class="result-btns">
+            <button class="btn-copy-res" id="btn-copy-res" onclick="copyResult()">⎘ Copy</button>
+            <button class="btn-visit-res" id="btn-visit-res" onclick="visitResult()">Visit →</button>
+          </div>
+        </div>
+        <div id="res-orig" class="res-orig"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── DASHBOARD PANEL ── -->
+  <div class="panel" id="panel-dashboard">
+    <div class="panel-inner">
+
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="sc-val" id="st-total">0</div>
+          <div class="sc-key">Total Links</div>
+        </div>
+        <div class="stat-card c-green">
+          <div class="sc-val" id="st-active">0</div>
+          <div class="sc-key">Active</div>
+        </div>
+        <div class="stat-card c-blue">
+          <div class="sc-val" id="st-clicks">0</div>
+          <div class="sc-key">Total Clicks</div>
+        </div>
+        <div class="stat-card c-red">
+          <div class="sc-val" id="st-expired">0</div>
+          <div class="sc-key">Expired</div>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="dash-toolbar">
+        <div class="dt-left">
+          <h2 class="dash-title">Your Links</h2>
+          <span class="dash-count" id="dash-count">0 links</span>
+        </div>
+        <div class="dt-right">
+          <select class="flt-sel" id="filter-sel" onchange="filterLinks(this.value)">
+            <option value="all">All Links</option>
+            <option value="active">Active</option>
+            <option value="disabled">Disabled</option>
+            <option value="expired">Expired</option>
+          </select>
+          <button class="btn-new" onclick="switchAppTab('create')">+ New</button>
+        </div>
+      </div>
+
+      <div id="links-list"></div>
+
+    </div>
+  </div>
+
+</div><!-- /app-screen -->
+
+<!-- ══════════════════════════════════════
+     EDIT MODAL
+══════════════════════════════════════ -->
+<div id="edit-modal" class="modal-overlay" onclick="closeModal(event)">
+  <div class="modal-box">
+    <div class="modal-hd">
+      <h3 class="modal-title">Edit Link</h3>
+      <button class="modal-x" onclick="closeModalDirect()">✕</button>
+    </div>
+    <input type="hidden" id="edit-code"/>
+    <div class="fg">
+      <label class="fl">New Destination URL</label>
+      <div class="fw">
+        <span class="fi">🔗</span>
+        <input id="edit-url" type="text" placeholder="https://new-destination.com" class="fi-input"/>
+      </div>
+    </div>
+    <div class="fg">
+      <label class="fl">Click Limit <span class="opt">(leave empty = unlimited)</span></label>
+      <div class="fw">
+        <span class="fi">🎯</span>
+        <input id="edit-limit" type="number" min="1" placeholder="e.g. 100" class="fi-input"/>
+      </div>
+    </div>
+    <div id="edit-err" class="form-err"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModalDirect()">Cancel</button>
+      <button class="btn-primary" onclick="saveEdit()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════ -->
+<script>
+/* ─────────────────────────────────────────
+   CONSTANTS
+───────────────────────────────────────── */
+const USERS_KEY   = 'sniplink-v2-users';
+const SESSION_KEY = 'sniplink-v2-session';
+const LINKS_KEY   = 'sniplink-v2-links';
+const BASE        = 'https://snip.ly/';
+const SHORT_BASE  = 'snip.ly/';
+
+let currentUser  = null;
+let allLinks     = [];
+let activeFilter = 'all';
+let justCreated  = null;
+
+/* ─────────────────────────────────────────
+   STORAGE HELPERS
+───────────────────────────────────────── */
+const getUsers     = ()  => JSON.parse(localStorage.getItem(USERS_KEY)   || '[]');
+const saveUsers    = (u) => localStorage.setItem(USERS_KEY,   JSON.stringify(u));
+const getSession   = ()  => JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+const saveSession  = (s) => localStorage.setItem(SESSION_KEY, JSON.stringify(s));
+const clearSession = ()  => localStorage.removeItem(SESSION_KEY);
+
+function loadLinks() {
+  const all = JSON.parse(localStorage.getItem(LINKS_KEY) || '[]');
+  allLinks = currentUser ? all.filter(l => l.owner === currentUser.email) : [];
+}
+function saveLinks() {
+  const all    = JSON.parse(localStorage.getItem(LINKS_KEY) || '[]');
+  const others = all.filter(l => l.owner !== currentUser.email);
+  localStorage.setItem(LINKS_KEY, JSON.stringify([...others, ...allLinks]));
+}
+
+/* ─────────────────────────────────────────
+   UTILITIES
+───────────────────────────────────────── */
+function genCode() {
+  const c = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  return Array.from({length: 6}, () => c[Math.floor(Math.random() * c.length)]).join('');
+}
+function isUrl(s) {
+  try { const u = new URL(s); return u.protocol === 'http:' || u.protocol === 'https:'; }
+  catch { return false; }
+}
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function trunc(s, n) { return s.length > n ? s.slice(0, n) + '…' : s; }
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})
+       + ' ' + d.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
+}
+function timeAgo(iso) {
+  if (!iso) return 'Never';
+  const m = Math.floor((Date.now() - new Date(iso)) / 60000);
+  if (m < 1)  return 'Just now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
+/* ─────────────────────────────────────────
+   TOAST
+───────────────────────────────────────── */
+let toastTimer;
+function toast(msg, type = 'ok') {
+  const el = document.getElementById('toast');
+  el.textContent = (type === 'ok' ? '✓ ' : type === 'err' ? '✕ ' : 'ℹ ') + msg;
+  el.className = 'show t-' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = '', 2800);
+}
+
+/* ─────────────────────────────────────────
+   SCREEN MANAGEMENT
+───────────────────────────────────────── */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* ─────────────────────────────────────────
+   AUTH TAB SWITCH
+───────────────────────────────────────── */
+function switchAuthTab(tab) {
+  ['login', 'register'].forEach(t => {
+    document.getElementById('tab-'  + t).classList.toggle('active', t === tab);
+    document.getElementById('form-' + t).classList.toggle('active', t === tab);
+  });
+  document.getElementById('login-err').textContent = '';
+  document.getElementById('reg-err').textContent   = '';
+}
+
+/* ─────────────────────────────────────────
+   REGISTER
+───────────────────────────────────────── */
+function doRegister() {
+  const name  = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim().toLowerCase();
+  const pass  = document.getElementById('reg-pass').value;
+  const err   = document.getElementById('reg-err');
+  err.textContent = '';
+
+  if (!name)                          return err.textContent = 'Please enter your name.';
+  if (!email || !email.includes('@')) return err.textContent = 'Please enter a valid email.';
+  if (pass.length < 6)                return err.textContent = 'Password must be at least 6 characters.';
+
+  const users = getUsers();
+  const existing = users.find(u => u.email === email);
+
+  if (existing) {
+    // If password matches, just log them in
+    if (existing.password === btoa(pass)) {
+      currentUser = existing;
+      saveSession({ email: existing.email, name: existing.name });
+      toast('Welcome back, ' + existing.name + '!', 'ok');
+      initApp();
+      return;
+    }
+    return err.textContent = 'Wrong password for this email. Try signing in instead.';
+  }
+
+  const user = { name, email, password: btoa(pass), createdAt: new Date().toISOString() };
+  users.push(user);
+  saveUsers(users);
+  currentUser = user;
+  saveSession({ email: user.email, name: user.name });
+  toast('Welcome, ' + name + '!', 'ok');
+  initApp();
+}
+
+function continueAsGuest() {
+  const guestName = 'Guest';
+  const guestEmail = 'guest@sniplink.local';
+  const users = getUsers();
+  let guest = users.find(u => u.email === guestEmail);
+  if (!guest) {
+    guest = { name: guestName, email: guestEmail, password: btoa('guest123'), createdAt: new Date().toISOString() };
+    users.push(guest);
+    saveUsers(users);
+  }
+  currentUser = guest;
+  saveSession({ email: guest.email, name: guest.name });
+  toast('Continuing as Guest', 'info');
+  initApp();
+}
+
+/* ─────────────────────────────────────────
+   LOGIN
+───────────────────────────────────────── */
+function doLogin() {
+  const email = document.getElementById('login-email').value.trim().toLowerCase();
+  const pass  = document.getElementById('login-pass').value;
+  const err   = document.getElementById('login-err');
+  err.textContent = '';
+
+  if (!email) return err.textContent = 'Please enter your email.';
+  if (!pass)  return err.textContent = 'Please enter your password.';
+
+  const user = getUsers().find(u => u.email === email && u.password === btoa(pass));
+  if (!user)  return err.textContent = 'Invalid email or password.';
+
+  currentUser = user;
+  saveSession({ email: user.email, name: user.name });
+  initApp();
+}
+
+/* ─────────────────────────────────────────
+   LOGOUT
+───────────────────────────────────────── */
+function doLogout() {
+  currentUser  = null;
+  allLinks     = [];
+  activeFilter = 'all';
+  clearSession();
+  ['login-email','login-pass','reg-name','reg-email','reg-pass']
+    .forEach(id => document.getElementById(id).value = '');
+  document.getElementById('login-err').textContent = '';
+  document.getElementById('reg-err').textContent   = '';
+  switchAuthTab('login');
+  showScreen('auth-screen');
+  toast('Logged out successfully.', 'info');
+}
+
+/* ─────────────────────────────────────────
+   INIT APP  (called after login / session restore)
+───────────────────────────────────────── */
+function initApp() {
+  document.getElementById('user-nm').textContent = currentUser.name;
+  document.getElementById('user-av').textContent = currentUser.name.charAt(0).toUpperCase();
+  loadLinks();
+  // Show app screen first so panels exist in DOM
+  showScreen('app-screen');
+  // Reset both panels to a known state, then activate dashboard
+  document.getElementById('panel-create').classList.remove('active');
+  document.getElementById('panel-dashboard').classList.remove('active');
+  document.getElementById('nav-create').classList.remove('active');
+  document.getElementById('nav-dashboard').classList.remove('active');
+  switchAppTab('dashboard');
+}
+
+/* ─────────────────────────────────────────
+   APP TAB SWITCH
+───────────────────────────────────────── */
+function switchAppTab(tab) {
+  ['dashboard', 'create'].forEach(t => {
+    document.getElementById('nav-'   + t).classList.toggle('active', t === tab);
+    document.getElementById('panel-' + t).classList.toggle('active', t === tab);
+  });
+  if (tab === 'create') {
+    document.getElementById('create-result').style.display = 'none';
+    document.getElementById('create-err').textContent      = '';
+  }
+  if (tab === 'dashboard') renderDashboard();
+}
+
+/* ─────────────────────────────────────────
+   CREATE LINK
+───────────────────────────────────────── */
+function createLink() {
+  const rawUrl = document.getElementById('c-url').value.trim();
+  const slug   = document.getElementById('c-slug').value.trim().replace(/\s+/g, '');
+  const limitV = document.getElementById('c-limit').value.trim();
+  const errEl  = document.getElementById('create-err');
+  errEl.textContent = '';
+
+  if (!rawUrl) return errEl.textContent = 'Please enter a destination URL.';
+  const url = /^https?:\/\//i.test(rawUrl) ? rawUrl : 'https://' + rawUrl;
+  if (!isUrl(url)) return errEl.textContent = 'Please enter a valid URL (must start with http/https).';
+
+  const limit = limitV ? parseInt(limitV) : null;
+  if (limitV && (isNaN(limit) || limit < 1))
+    return errEl.textContent = 'Click limit must be a positive number.';
+
+  const allStored = JSON.parse(localStorage.getItem(LINKS_KEY) || '[]');
+  const code = slug || genCode();
+  if (allStored.find(l => l.code === code))
+    return errEl.textContent = slug ? 'That slug is already taken. Try another.' : 'Code collision — please retry.';
+
+  const link = {
+    code,
+    owner:       currentUser.email,
+    original:    url,
+    short:       BASE + code,
+    clicks:      0,
+    limit:       limit,
+    enabled:     true,
+    createdAt:   new Date().toISOString(),
+    lastAccessed: null
+  };
+
+  allLinks.unshift(link);
+  saveLinks();
+  justCreated = code;
+
+  // Show result card
+  document.getElementById('res-url').textContent   = SHORT_BASE + code;
+  document.getElementById('res-orig').textContent  = '→ ' + trunc(url, 65);
+  document.getElementById('btn-copy-res').textContent  = '⎘ Copy';
+  document.getElementById('btn-visit-res').textContent = 'Visit →';
+  document.getElementById('create-result').style.display = 'flex';
+
+  // Clear inputs
+  document.getElementById('c-url').value   = '';
+  document.getElementById('c-slug').value  = '';
+  document.getElementById('c-limit').value = '';
+
+  toast('Short link created!');
+  renderDashboard();
+}
+
+function copyResult() {
+  const link = allLinks.find(l => l.code === justCreated);
+  if (!link) return;
+  navigator.clipboard.writeText(link.short).catch(() => {});
+  document.getElementById('btn-copy-res').textContent = '✓ Copied';
+  setTimeout(() => document.getElementById('btn-copy-res').textContent = '⎘ Copy', 1800);
+  toast('Copied to clipboard!');
+}
+
+function visitResult() {
+  const link = allLinks.find(l => l.code === justCreated);
+  if (!link) return;
+  if (!link.enabled)   { toast('This link is currently disabled.', 'err'); return; }
+  if (isExpired(link)) { toast('This link has reached its click limit.', 'err'); return; }
+  link.clicks++;
+  link.lastAccessed = new Date().toISOString();
+  saveLinks();
+  renderDashboard();
+  const btn = document.getElementById('btn-visit-res');
+  btn.textContent = 'Opening…';
+  setTimeout(() => { window.open(link.original, '_blank'); btn.textContent = 'Visit →'; }, 400);
+  toast('Opening in new tab!');
+}
+
+/* ─────────────────────────────────────────
+   LINK STATUS
+───────────────────────────────────────── */
+function isExpired(l) {
+  return l.limit !== null && l.limit !== undefined && l.clicks >= l.limit;
+}
+function getStatus(l) {
+  if (isExpired(l))  return 'expired';
+  if (!l.enabled)    return 'disabled';
+  return 'active';
+}
+
+/* ─────────────────────────────────────────
+   VISIT LINK  (from dashboard)
+───────────────────────────────────────── */
+function visitLink(code) {
+  const l = allLinks.find(x => x.code === code);
+  if (!l) return;
+
+  if (!l.enabled) {
+    showRedirect('🔴', 'Link Disabled', 'This link has been disabled by its owner.');
+    return;
+  }
+  if (isExpired(l)) {
+    showRedirect('⏱', 'Click Limit Reached',
+      `This link expired after ${l.limit} click${l.limit !== 1 ? 's' : ''}.`);
+    return;
+  }
+
+  l.clicks++;
+  l.lastAccessed = new Date().toISOString();
+  saveLinks();
+  renderDashboard();
+
+  const btn = document.getElementById('vb-' + code);
+  if (btn) { btn.textContent = '…'; setTimeout(() => { if (btn) btn.textContent = 'Visit →'; }, 700); }
+  setTimeout(() => window.open(l.original, '_blank'), 300);
+  toast(`Opened! (${l.clicks} click${l.clicks !== 1 ? 's' : ''})`);
+}
+
+function showRedirect(icon, title, msg) {
+  document.getElementById('rd-icon').textContent  = icon;
+  document.getElementById('rd-title').textContent = title;
+  document.getElementById('rd-msg').textContent   = msg;
+  showScreen('redirect-screen');
+}
+
+/* ─────────────────────────────────────────
+   TOGGLE ENABLE / DISABLE
+───────────────────────────────────────── */
+function toggleLink(code) {
+  const l = allLinks.find(x => x.code === code);
+  if (!l) return;
+  if (isExpired(l)) { toast('Cannot toggle an expired link.', 'err'); return; }
+  l.enabled = !l.enabled;
+  saveLinks();
+  renderDashboard();
+  toast(l.enabled ? 'Link enabled.' : 'Link disabled.', l.enabled ? 'ok' : 'info');
+}
+
+/* ─────────────────────────────────────────
+   DELETE LINK
+───────────────────────────────────────── */
+function deleteLink(code) {
+  if (!confirm('Delete this link? This cannot be undone.')) return;
+  allLinks = allLinks.filter(l => l.code !== code);
+  saveLinks();
+  renderDashboard();
+  toast('Link deleted.', 'err');
+}
+
+/* ─────────────────────────────────────────
+   COPY LINK  (dashboard)
+───────────────────────────────────────── */
+function copyLink(code, btn) {
+  const l = allLinks.find(x => x.code === code);
+  if (!l) return;
+  navigator.clipboard.writeText(l.short).catch(() => {});
+  const orig = btn.textContent;
+  btn.textContent = '✓';
+  setTimeout(() => btn.textContent = orig, 1600);
+  toast('Copied to clipboard!');
+}
+
+/* ─────────────────────────────────────────
+   EDIT MODAL
+───────────────────────────────────────── */
+function openEdit(code) {
+  const l = allLinks.find(x => x.code === code);
+  if (!l) return;
+  document.getElementById('edit-code').value  = code;
+  document.getElementById('edit-url').value   = l.original;
+  document.getElementById('edit-limit').value = l.limit || '';
+  document.getElementById('edit-err').textContent = '';
+  document.getElementById('edit-modal').classList.add('open');
+}
+function closeModal(e) {
+  if (e.target === document.getElementById('edit-modal')) closeModalDirect();
+}
+function closeModalDirect() {
+  document.getElementById('edit-modal').classList.remove('open');
+}
+function saveEdit() {
+  const code   = document.getElementById('edit-code').value;
+  const rawUrl = document.getElementById('edit-url').value.trim();
+  const limitV = document.getElementById('edit-limit').value.trim();
+  const errEl  = document.getElementById('edit-err');
+  errEl.textContent = '';
+
+  if (!rawUrl) return errEl.textContent = 'Destination URL cannot be empty.';
+  const url = /^https?:\/\//i.test(rawUrl) ? rawUrl : 'https://' + rawUrl;
+  if (!isUrl(url)) return errEl.textContent = 'Please enter a valid URL.';
+
+  const limit = limitV ? parseInt(limitV) : null;
+  if (limitV && (isNaN(limit) || limit < 1))
+    return errEl.textContent = 'Click limit must be a positive number.';
+
+  const l = allLinks.find(x => x.code === code);
+  if (!l) return;
+
+  l.original = url;
+  l.short    = BASE + code;
+  l.limit    = limit;
+  // If new limit is higher than current clicks, allow re-enabling
+  if (limit === null || l.clicks < limit) { /* keep enabled state */ }
+
+  saveLinks();
+  renderDashboard();
+  closeModalDirect();
+  toast('Link updated successfully!');
+}
+
+/* ─────────────────────────────────────────
+   FILTER
+───────────────────────────────────────── */
+function filterLinks(val) {
+  activeFilter = val;
+  renderDashboard();
+}
+
+/* ─────────────────────────────────────────
+   RENDER DASHBOARD
+───────────────────────────────────────── */
+function renderDashboard() {
+  const totalClicks  = allLinks.reduce((s, l) => s + l.clicks, 0);
+  const activeCount  = allLinks.filter(l => getStatus(l) === 'active').length;
+  const expiredCount = allLinks.filter(l => isExpired(l)).length;
+
+  document.getElementById('st-total').textContent   = allLinks.length;
+  document.getElementById('st-active').textContent  = activeCount;
+  document.getElementById('st-clicks').textContent  = totalClicks;
+  document.getElementById('st-expired').textContent = expiredCount;
+
+  let filtered = allLinks;
+  if (activeFilter === 'active')   filtered = allLinks.filter(l => getStatus(l) === 'active');
+  if (activeFilter === 'disabled') filtered = allLinks.filter(l => getStatus(l) === 'disabled');
+  if (activeFilter === 'expired')  filtered = allLinks.filter(l => isExpired(l));
+
+  document.getElementById('dash-count').textContent =
+    `${filtered.length} link${filtered.length !== 1 ? 's' : ''}`;
+
+  const container = document.getElementById('links-list');
+  const maxClicks = Math.max(...allLinks.map(l => l.clicks), 1);
+
+  if (allLinks.length === 0) {
+    container.innerHTML = `
+      <div class="empty-st">
+        <div class="empty-ic">✂</div>
+        <div class="empty-tt">No links yet</div>
+        <p class="empty-sb">Create your first shortened link to get started.</p>
+        <button class="btn-primary" onclick="switchAppTab('create')">+ Create First Link</button>
+      </div>`;
+    return;
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="empty-st">
+        <div class="empty-ic">🔍</div>
+        <div class="empty-tt">No links match this filter</div>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map((l, i) => {
+    const st       = getStatus(l);
+    const expired  = isExpired(l);
+    const pct      = Math.round((l.clicks / maxClicks) * 100);
+    const limitPct = l.limit ? Math.min(100, Math.round((l.clicks / l.limit) * 100)) : 0;
+
+    return `
+    <div class="lc st-${st}" style="animation-delay:${i * 45}ms">
+
+      <div class="lc-top">
+        <div class="lc-left">
+          <div class="lc-short-row">
+            <span class="lc-short">${esc(SHORT_BASE + l.code)}</span>
+            <button class="ic-btn" onclick="copyLink('${esc(l.code)}', this)" title="Copy short link">⎘</button>
+            <span class="st-badge bd-${st}">${st}</span>
+            ${l.limit ? `<span class="limit-badge">🎯 ${l.clicks}/${l.limit}</span>` : ''}
+          </div>
+          <div class="lc-orig" title="${esc(l.original)}">${esc(trunc(l.original, 72))}</div>
+        </div>
+        <div class="lc-right">
+          <div class="clicks-block">
+            <div class="ck-num">${l.clicks}</div>
+            <div class="ck-lbl">click${l.clicks !== 1 ? 's' : ''}</div>
+          </div>
+        </div>
+      </div>
+
+      ${l.limit
+        ? `<div class="prog-wrap">
+             <div class="prog-fill ${limitPct >= 100 ? 'prog-full' : ''}" style="width:${limitPct}%"></div>
+           </div>
+           <div class="prog-lbl">${l.clicks} / ${l.limit} clicks used${limitPct >= 100 ? ' — LIMIT REACHED' : ''}</div>`
+        : `<div class="prog-wrap">
+             <div class="prog-fill prog-neutral" style="width:${pct}%"></div>
+           </div>`
+      }
+
+      <div class="lc-meta">
+        <span class="meta-item">📅 Created: <b>${fmtDate(l.createdAt)}</b></span>
+        <span class="meta-item">🕐 Last accessed: <b>${timeAgo(l.lastAccessed)}</b></span>
+      </div>
+
+      <div class="lc-actions">
+        <button
+          class="btn-visit-card ${expired ? 'btn-expired' : ''}"
+          id="vb-${esc(l.code)}"
+          onclick="visitLink('${esc(l.code)}')"
+          ${expired ? 'disabled' : ''}>
+          ${expired ? '⏱ Expired' : 'Visit →'}
+        </button>
+        <button
+          class="btn-toggle ${l.enabled && !expired ? 'btn-dis' : 'btn-en'}"
+          onclick="toggleLink('${esc(l.code)}')"
+          ${expired ? 'disabled' : ''}>
+          ${l.enabled && !expired ? 'Disable' : 'Enable'}
+        </button>
+        <button class="btn-edit-sm"  onclick="openEdit('${esc(l.code)}')">✏ Edit</button>
+        <button class="btn-del-sm"   onclick="deleteLink('${esc(l.code)}')">✕ Delete</button>
+      </div>
+
+    </div>`;
+  }).join('');
+}
+
+/* ─────────────────────────────────────────
+   BOOT  — restore session or show auth
+───────────────────────────────────────── */
+function boot() {
+  try {
+    const session = getSession();
+    if (session) {
+      const user = getUsers().find(u => u.email === session.email);
+      if (user) { currentUser = user; initApp(); return; }
+    }
+  } catch(e) { console.warn('Session restore failed:', e); }
+  showScreen('auth-screen');
+}
+
+// Wait for DOM to be fully ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', boot);
+} else {
+  boot();
+}
+</script>
+</body>
+</html>
